@@ -8,11 +8,6 @@ function fakeClient(network: 'mainnet' | 'testnet' = 'mainnet'): HoodClient {
   return { network } as unknown as HoodClient
 }
 
-vi.mock('hoodchain', async () => {
-  const actual = await vi.importActual<typeof import('hoodchain')>('hoodchain')
-  return { ...actual }
-})
-
 describe('MemoryLruStore', () => {
   it('evicts the least-recently-used entry once maxEntries is exceeded', () => {
     const store = new MemoryLruStore(2)

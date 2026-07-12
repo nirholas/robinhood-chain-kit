@@ -11,6 +11,26 @@ export type { Candle, Interval, TradePoint } from './candles.js'
 import type BetterSqlite3 from 'better-sqlite3'
 type Database = BetterSqlite3.Database
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * Retry a public-RPC call with exponential backoff on transient failures
+ * (rate limiting is common on public endpoints during a full-history
+ * backfill — a bare call would abort the whole sync on the first 429).
+ */
+async function withRetry<T>(fn: () => Promise<T>, attempts = 5, baseDelayMs = 1000): Promise<T> {
+  let lastError: unknown
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      lastError = error
+      await sleep(baseDelayMs * 2 ** attempt)
+    }
+  }
+  throw lastError
+}
+
 const TRANSFER_EVENT = {
   type: 'event',
   name: 'Transfer',
@@ -56,6 +76,13 @@ export interface IndexerOptions {
   chunkSize?: bigint
   /** Concurrent `getBlock` timestamp fetches. @defaultValue `8` */
   timestampConcurrency?: number
+  /**
+   * Delay between successive backfill chunk requests in ms. A full-history
+   * sync issues many sequential `eth_getLogs` calls; public RPC endpoints
+   * commonly rate-limit bursty clients, so a small delay is the difference
+   * between a clean backfill and a wall of 429s. @defaultValue `50`
+   */
+  throttleMs?: number
 }
 
 /** Progress callback payload during {@link Indexer.sync}. */
@@ -99,6 +126,7 @@ export class Indexer {
   private readonly tokens: Address[]
   private readonly chunkSize: bigint
   private readonly timestampConcurrency: number
+  private readonly throttleMs: number
   private poolsByToken = new Map<string, PoolInfo[]>()
 
   /** @internal Use {@link createIndexer}. */
@@ -108,6 +136,7 @@ export class Indexer {
     this.tokens = options.tokens.map((t) => getAddress(t))
     this.chunkSize = options.chunkSize ?? 5000n
     this.timestampConcurrency = options.timestampConcurrency ?? 8
+    this.throttleMs = options.throttleMs ?? 50
     this.db.pragma('journal_mode = WAL')
     this.db.exec(SCHEMA)
     this.db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run('chainId', String(this.client.chain.id))
@@ -150,7 +179,15 @@ export class Indexer {
    * Pass `fromBlock` on the first run to backfill history — required for
    * holder counts to match the full-history on-chain state.
    */
-  async sync(options: { fromBlock?: bigint; toBlock?: bigint; onProgress?: (p: SyncProgress) => void } = {}): Promise<SyncResult> {
+  async sync(
+    options: {
+      fromBlock?: bigint
+      /** Independent backfill start for swaps (defaults to `fromBlock`). Lets you pull full holder history without re-scanning a memecoin's entire swap history for candles. */
+      swapFromBlock?: bigint
+      toBlock?: bigint
+      onProgress?: (p: SyncProgress) => void
+    } = {},
+  ): Promise<SyncResult> {
     const head = options.toBlock ?? (await this.client.public.getBlockNumber())
     let transfersIndexed = 0
     let swapsIndexed = 0
@@ -169,7 +206,9 @@ export class Indexer {
       let from = options.fromBlock ?? this.getCursor(tKey, head)
       for (let start = from; start <= head; start += this.chunkSize) {
         const to = start + this.chunkSize - 1n > head ? head : start + this.chunkSize - 1n
-        const logs = await this.client.public.getLogs({ address: token, event: TRANSFER_EVENT, fromBlock: start, toBlock: to })
+        const logs = await withRetry(() =>
+          this.client.public.getLogs({ address: token, event: TRANSFER_EVENT, fromBlock: start, toBlock: to }),
+        )
         const tx = this.db.transaction((rows: typeof logs) => {
           for (const log of rows) {
             const a = log.args as { from?: Address; to?: Address; value?: bigint }
@@ -181,16 +220,19 @@ export class Indexer {
         tx(logs)
         this.setCursor(tKey, to + 1n)
         options.onProgress?.({ kind: 'transfers', target: token, fromBlock: start, toBlock: to, head, inserted: logs.length })
+        if (to < head && this.throttleMs > 0) await sleep(this.throttleMs)
       }
 
       // --- Swaps (per pool) ---
       for (const pool of this.poolsByToken.get(token.toLowerCase()) ?? []) {
         const tokenIs0 = pool.token0.toLowerCase() === token.toLowerCase()
         const sKey = `swap:${pool.pool.toLowerCase()}`
-        from = options.fromBlock ?? this.getCursor(sKey, head)
+        from = (options.swapFromBlock ?? options.fromBlock) ?? this.getCursor(sKey, head)
         for (let start = from; start <= head; start += this.chunkSize) {
           const to = start + this.chunkSize - 1n > head ? head : start + this.chunkSize - 1n
-          const logs = await this.client.public.getLogs({ address: pool.pool, event: uniswapV3SwapEvent, fromBlock: start, toBlock: to })
+          const logs = await withRetry(() =>
+            this.client.public.getLogs({ address: pool.pool, event: uniswapV3SwapEvent, fromBlock: start, toBlock: to }),
+          )
           const tx = this.db.transaction((rows: typeof logs) => {
             for (const log of rows) {
               const swap = decodeSwapLog(log, pool)
@@ -206,6 +248,7 @@ export class Indexer {
           tx(logs)
           this.setCursor(sKey, to + 1n)
           options.onProgress?.({ kind: 'swaps', target: pool.pool, fromBlock: start, toBlock: to, head, inserted: logs.length })
+          if (to < head && this.throttleMs > 0) await sleep(this.throttleMs)
         }
       }
     }
@@ -222,7 +265,7 @@ export class Indexer {
     let fetched = 0
     for (let i = 0; i < missing.length; i += this.timestampConcurrency) {
       const slice = missing.slice(i, i + this.timestampConcurrency)
-      const results = await Promise.all(slice.map((b) => this.client.public.getBlock({ blockNumber: b })))
+      const results = await Promise.all(slice.map((b) => withRetry(() => this.client.public.getBlock({ blockNumber: b }))))
       const tx = this.db.transaction(() => {
         results.forEach((block, j) => {
           insert.run(Number(slice[j]), Number(block.timestamp))
@@ -230,6 +273,7 @@ export class Indexer {
         })
       })
       tx()
+      if (i + this.timestampConcurrency < missing.length && this.throttleMs > 0) await sleep(this.throttleMs)
     }
     if (onProgress && missing.length > 0) {
       onProgress({ kind: 'timestamps', target: getAddress('0x0000000000000000000000000000000000000000'), fromBlock: 0n, toBlock: 0n, head: 0n, inserted: fetched })
@@ -247,36 +291,28 @@ export class Indexer {
     const t = getAddress(token)
     const minBalance = options.minBalance ?? 1n
     const decimals = getStockTokenByAddress(t)?.decimals ?? 18
-    const rows = this.db
-      .prepare(
-        `SELECT DISTINCT addr FROM (
-           SELECT to_addr AS addr FROM transfers WHERE token = ?
-           UNION SELECT from_addr AS addr FROM transfers WHERE token = ?
-         )`,
-      )
-      .all(t, t) as Array<{ addr: string }>
+
+    // Two full-table (indexed on `token`) scans total, aggregated in JS
+    // bigints in one pass — NOT one query per candidate address (that was
+    // O(distinct addresses × rows) and times out past a few thousand
+    // transfers). SQLite SUM() is avoided entirely because 18-decimal token
+    // values routinely exceed both its 64-bit integer range and float64
+    // precision.
+    const balances = new Map<string, bigint>()
+    const inbound = this.db.prepare('SELECT to_addr AS addr, value FROM transfers WHERE token = ?').all(t) as Array<{ addr: string; value: string }>
+    for (const row of inbound) balances.set(row.addr, (balances.get(row.addr) ?? 0n) + BigInt(row.value))
+    const outbound = this.db.prepare('SELECT from_addr AS addr, value FROM transfers WHERE token = ?').all(t) as Array<{ addr: string; value: string }>
+    for (const row of outbound) balances.set(row.addr, (balances.get(row.addr) ?? 0n) - BigInt(row.value))
 
     const holders: Holder[] = []
     const divisor = 10 ** decimals
-    for (const row of rows) {
-      if (row.addr === '0x0000000000000000000000000000000000000000') continue
-      // Net balance recomputed exactly in JS bigints (SQLite SUM would lose
-      // precision on 18-decimal token values).
-      const balance = this.exactBalance(t, row.addr)
+    for (const [addr, balance] of balances) {
+      if (addr === '0x0000000000000000000000000000000000000000') continue
       if (balance >= minBalance) {
-        holders.push({ address: getAddress(row.addr as Address), balance, balanceFormatted: Number(balance) / divisor })
+        holders.push({ address: getAddress(addr as Address), balance, balanceFormatted: Number(balance) / divisor })
       }
     }
     return holders.sort((a, b) => (b.balance > a.balance ? 1 : b.balance < a.balance ? -1 : 0))
-  }
-
-  private exactBalance(token: Address, address: string): bigint {
-    const inbound = this.db.prepare('SELECT value FROM transfers WHERE token = ? AND to_addr = ?').all(token, address) as Array<{ value: string }>
-    const outbound = this.db.prepare('SELECT value FROM transfers WHERE token = ? AND from_addr = ?').all(token, address) as Array<{ value: string }>
-    let bal = 0n
-    for (const r of inbound) bal += BigInt(r.value)
-    for (const r of outbound) bal -= BigInt(r.value)
-    return bal
   }
 
   /** Number of holders with a positive balance (see {@link Indexer.holders} accuracy note). */
