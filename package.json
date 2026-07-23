@@ -1,6 +1,6 @@
 {
   "name": "hoodkit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Power-user toolkit for Robinhood Chain (chain ID 4663): real-time streams with reconnect gap-fill, read-through caching with request coalescing, multicall batching, a local SQLite indexer (holders/OHLCV/volume), agent strategy primitives (PnL, TWAP, triggers, spend caps, dry-run), and SSR-safe React hooks.",
   "keywords": [
     "robinhood",
@@ -20,11 +20,11 @@
   "author": "nirholas (https://x.com/nichxbt)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nirholas/hoodkit.git"
+    "url": "git+https://github.com/nirholas/robinhood-chain-kit.git"
   },
-  "homepage": "https://nirholas.github.io/hoodkit/",
+  "homepage": "https://nirholas.github.io/robinhood-chain-kit/",
   "bugs": {
-    "url": "https://github.com/nirholas/hoodkit/issues"
+    "url": "https://github.com/nirholas/robinhood-chain-kit/issues"
   },
   "type": "module",
   "engines": {
