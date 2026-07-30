@@ -61,9 +61,9 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "peerDependencies": {
-    "better-sqlite3": ">=11",
+    "better-sqlite3": ">=11 <14",
     "hoodchain": "^0.1.0",
-    "react": ">=18",
+    "react": ">=18 <20",
     "viem": "^2.55.0",
     "ws": "^8.18.0"
   },

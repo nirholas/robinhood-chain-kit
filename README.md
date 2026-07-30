@@ -41,8 +41,8 @@ feature that requires them:
 | --- | --- | --- |
 | `hoodchain` `^0.1.0` | every module — `HoodClient` is the shared entry point | required |
 | `viem` `^2.55.0` | every module | required |
-| `react` `>=18` | `hoodkit/react` hooks only | optional |
-| `better-sqlite3` `>=11` | `Indexer`/`createIndexer` only | optional |
+| `react` `>=18 <20` | `hoodkit/react` hooks only | optional |
+| `better-sqlite3` `>=11 <14` | `Indexer`/`createIndexer` only | optional |
 | `ws` `^8.18.0` | kept external for environments that need it alongside `hoodchain` | optional |
 
 Node ≥ 20. If a peer is missing at runtime for the feature you're using, `hoodkit` throws a
@@ -334,7 +334,7 @@ const results = await twap.run() // dryRun defaults on with no wallet — quoted
 
 SSR-safe hooks over the streaming and read layers. Every subscription runs inside `useEffect`,
 so components render inert on the server and hydrate on the client. Requires the optional
-`react` `>=18` peer dependency.
+`react` `>=18 <20` peer dependency.
 
 ```ts
 import { HoodProvider, useHoodClient, useQuote, usePortfolio, useLaunches, useSwap } from 'hoodkit/react'
