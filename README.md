@@ -402,7 +402,7 @@ npx tsx examples/batch-plan.ts
 - **API reference**: generate the full TypeDoc reference locally with `npm run docs:api`
   (outputs to `docs/api`, entry points `src/index.ts` and `src/react/index.ts` — see
   [`typedoc.json`](./typedoc.json)).
-- **Homepage**: https://nirholas.github.io/hoodkit/
+- **Homepage**: https://nirholas.github.io/robinhood-chain-kit/
 - **Base SDK**: [`hoodchain`](https://github.com/nirholas/robinhood-chain-sdk) — the typed
   client, Stock Token registry, swap routing, and firehose that every `hoodkit` module builds on.
 - **Robinhood Chain docs**: https://docs.robinhood.com/chain/
@@ -416,7 +416,7 @@ npm run test:live # integration: real mainnet reads, no API key needed (180s tim
 
 ## Contributing
 
-Issues and PRs welcome at [github.com/nirholas/hoodkit](https://github.com/nirholas/hoodkit/issues).
+Issues and PRs welcome at [github.com/nirholas/robinhood-chain-kit](https://github.com/nirholas/robinhood-chain-kit/issues).
 Before opening a PR: `npm run typecheck && npm test && npm run build`. Keep new public exports
 covered by a unit test in [`tests/unit`](./tests/unit) and documented here.
 
