@@ -1,0 +1,28 @@
+# robinhood-chain-kit
+
+> Power-user toolkit for Robinhood Chain: real-time streams, read-through caching, multicall batching, a local SQLite indexer, agent strategy primitives, SSR-safe React hooks. hoodkit.
+
+robinhood-chain-kit is an open-source repository by nirholas, part of the three.ws ecosystem.
+
+## Docs
+
+- [README](https://github.com/nirholas/robinhood-chain-kit/blob/HEAD/README.md): install, usage and reference
+- [Install](https://github.com/nirholas/robinhood-chain-kit/blob/HEAD/README.md#install)
+- [Quickstart](https://github.com/nirholas/robinhood-chain-kit/blob/HEAD/README.md#quickstart)
+- [API reference](https://github.com/nirholas/robinhood-chain-kit/blob/HEAD/README.md#api-reference)
+- [Examples](https://github.com/nirholas/robinhood-chain-kit/blob/HEAD/README.md#examples)
+- [Documentation](https://github.com/nirholas/robinhood-chain-kit/blob/HEAD/README.md#documentation)
+- [Testing](https://github.com/nirholas/robinhood-chain-kit/blob/HEAD/README.md#testing)
+- [Contributing](https://github.com/nirholas/robinhood-chain-kit/blob/HEAD/README.md#contributing)
+- [License](https://github.com/nirholas/robinhood-chain-kit/blob/HEAD/README.md#license)
+- [AGENTS.md](https://github.com/nirholas/robinhood-chain-kit/blob/HEAD/AGENTS.md): guidance for coding agents
+- [Full text for LLMs](https://github.com/nirholas/robinhood-chain-kit/blob/HEAD/llms-full.txt): the README inlined
+
+## Project
+
+- [Source](https://github.com/nirholas/robinhood-chain-kit)
+- [Issues](https://github.com/nirholas/robinhood-chain-kit/issues)
+- [Discussions](https://github.com/nirholas/robinhood-chain-kit/discussions)
+- [Homepage](https://nirholas.github.io/robinhood-chain-kit/)
+- [three.ws](https://three.ws): the platform this is part of
+- [All repositories by nirholas](https://github.com/nirholas/nirholas#readme)

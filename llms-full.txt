@@ -1,27 +1,26 @@
+# robinhood-chain-kit
+
+> Power-user toolkit for Robinhood Chain: real-time streams, read-through caching, multicall batching, a local SQLite indexer, agent strategy primitives, SSR-safe React hooks. hoodkit.
+
 # hoodkit
-
-<!-- three.ws:badges -->
-[![GitHub stars](https://img.shields.io/github/stars/nirholas/robinhood-chain-kit?style=flat&logo=github)](https://github.com/nirholas/robinhood-chain-kit/stargazers) [![Last commit](https://img.shields.io/github/last-commit/nirholas/robinhood-chain-kit?style=flat)](https://github.com/nirholas/robinhood-chain-kit/commits) [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat)](https://github.com/nirholas/robinhood-chain-kit/pulls) [![AI agent friendly](https://img.shields.io/badge/AI%20agents-AGENTS.md%20%2B%20llms.txt-6d5dfc?style=flat)](https://github.com/nirholas/robinhood-chain-kit/blob/HEAD/AGENTS.md)
-<!-- /three.ws:badges -->
-
  
-**The power-user toolkit for [Robinhood Chain](https://docs.robinhood.com/chain/) (chain ID 4663) — built on top of [`hoodchain`](https://github.com/nirholas/robinhood-chain-sdk).**
+**The power-user toolkit for [Robinhood Chain](https://docs.robinhood.com/chain/) (chain ID 4663): built on top of [`hoodchain`](https://github.com/nirholas/robinhood-chain-sdk).**
 
 `hoodchain` gives you typed reads and writes. `hoodkit` gives you what a production trading
 bot, a live dashboard, or an on-chain analytics service actually needs on top of that:
 
-- **Real-time streams with reconnect gap-fill** — Chainlink price ticks, Uniswap v3 swaps,
+- **Real-time streams with reconnect gap-fill**: Chainlink price ticks, Uniswap v3 swaps,
   NOXA/Odyssey launches, and wallet portfolio changes, all as a backpressure-safe `Stream<T>`
   that survives a dropped RPC connection without silently losing an event.
-- **Read-through caching with request coalescing** — collapse N concurrent identical reads
+- **Read-through caching with request coalescing**: collapse N concurrent identical reads
   into one upstream call, cached per-datatype TTL.
-- **Multicall batching** — `plan()` for one-shot bulk reads, `createBatcher()` for a
+- **Multicall batching**: `plan()` for one-shot bulk reads, `createBatcher()` for a
   DataLoader-style batcher that coalesces reads from unrelated code paths automatically.
-- **A local SQLite indexer** — holders, OHLCV candles, and rolling 24h volume, computed from
+- **A local SQLite indexer**: holders, OHLCV candles, and rolling 24h volume, computed from
   indexed `Transfer`/`Swap` events with zero RPC at query time.
-- **Agent strategy primitives** — weighted-average-cost PnL tracking, price-cross triggers, a
+- **Agent strategy primitives**: weighted-average-cost PnL tracking, price-cross triggers, a
   dry-run-by-default TWAP executor, and hard spend caps.
-- **SSR-safe React hooks** — `hoodkit/react` wraps the streaming and read layers in hooks that
+- **SSR-safe React hooks**: `hoodkit/react` wraps the streaming and read layers in hooks that
   render inert on the server and hydrate on the client.
 
 Who it's for: anyone building a bot, dashboard, indexer, or agent against Robinhood Chain who
@@ -38,13 +37,13 @@ npm install hoodkit hoodchain viem
 pnpm add hoodkit hoodchain viem
 ```
 
-`hoodchain` and `viem` are required peer dependencies — `hoodkit` never bundles them, so your
+`hoodchain` and `viem` are required peer dependencies: `hoodkit` never bundles them, so your
 app controls the exact versions. Two more peers are optional and only needed if you use the
 feature that requires them:
 
 | Peer | Required for | Optional? |
 | --- | --- | --- |
-| `hoodchain` `^0.1.0` | every module — `HoodClient` is the shared entry point | required |
+| `hoodchain` `^0.1.0` | every module: `HoodClient` is the shared entry point | required |
 | `viem` `^2.55.0` | every module | required |
 | `react` `>=18 <20` | `hoodkit/react` hooks only | optional |
 | `better-sqlite3` `>=11 <14` | `Indexer`/`createIndexer` only | optional |
@@ -62,14 +61,14 @@ import { streamPrices, createHoodCache, plan } from 'hoodkit'
 
 const hood = createHoodClient() // mainnet 4663, public RPC, multicall batching on
 
-// Live Chainlink prices — emits only when a feed's round actually advances
+// Live Chainlink prices: emits only when a feed's round actually advances
 const prices = streamPrices(hood, ['AAPL', 'TSLA', 'NVDA'])
 for await (const tick of prices) {
   console.log(`${tick.symbol}: $${tick.priceUsd} (round #${tick.roundId})`)
   break // for await naturally supports `break` to stop consuming
 }
 
-// Read-through cache — 100 concurrent calls collapse into ~1 RPC round-trip
+// Read-through cache: 100 concurrent calls collapse into ~1 RPC round-trip
 const cache = createHoodCache(hood)
 await Promise.all(Array.from({ length: 100 }, () => cache.getQuote('AAPL')))
 console.log(cache.stats) // { hits, misses, coalesced }
@@ -83,14 +82,13 @@ const results = await plan(
 ```
 
 Four more runnable, end-to-end scripts plus a full React dashboard live in
-[`examples/`](./examples) — see [Examples](#examples) below.
+[`examples/`](./examples): see [Examples](#examples) below.
 
 ## API reference
 
 `hoodkit` has two entry points: the default export (`hoodkit`) with everything below except the
 React hooks, and `hoodkit/react` for the hook layer. Every export below is a real, verified
-export from [`src/index.ts`](./src/index.ts) and [`src/react/index.ts`](./src/react/index.ts) —
-nothing here is aspirational.
+export from [`src/index.ts`](./src/index.ts) and [`src/react/index.ts`](./src/react/index.ts): nothing here is aspirational.
 
 ### Stream
 
@@ -106,9 +104,9 @@ class Stream<T> implements AsyncIterable<T> {
   on(event: 'close', listener: () => void): () => void
   off(event, listener): void
   push(value: T): void          // producer API
-  fail(error: Error): void      // producer API — transient error, stream stays open
-  end(): void                   // producer API — graceful close
-  destroy(error: Error): void   // producer API — terminal error, closes the stream
+  fail(error: Error): void      // producer API: transient error, stream stays open
+  end(): void                   // producer API: graceful close
+  destroy(error: Error): void   // producer API: terminal error, closes the stream
   close(): void                 // alias for end()
   readonly isClosed: boolean
   readonly buffered: number
@@ -117,17 +115,17 @@ class Stream<T> implements AsyncIterable<T> {
 ```
 
 `StreamOptions`: `{ highWaterMark?: number /* default 1024 */, overflow?: OverflowPolicy }`.
-`OverflowPolicy` is `'drop-oldest'` (default — keep the newest `highWaterMark` values),
-`'latest'` (keep only the single most recent value — right for price ticks), or `'block'`
+`OverflowPolicy` is `'drop-oldest'` (default: keep the newest `highWaterMark` values),
+`'latest'` (keep only the single most recent value: right for price ticks), or `'block'`
 (never drop, for naturally slow producers).
 
 | Export | Signature | What it does |
 | --- | --- | --- |
 | `streamPrices(client, symbols?, options?)` | → `Stream<PriceTick>` | Polls every feed in one multicall on an interval (default 4000ms); emits a `PriceTick` only when a symbol's Chainlink round advances. `symbols` omitted streams every priced Stock Token. |
-| `streamSwaps(client, target, options?)` | → `Promise<Stream<SwapEvent>>` | Streams Uniswap v3 swaps for `{ pool }` or every WETH/USDG pool of `{ token }`. Gap-fill backed — a dropped RPC connection re-reads the missed block range. |
+| `streamSwaps(client, target, options?)` | → `Promise<Stream<SwapEvent>>` | Streams Uniswap v3 swaps for `{ pool }` or every WETH/USDG pool of `{ token }`. Gap-fill backed: a dropped RPC connection re-reads the missed block range. |
 | `streamLaunches(client, options?)` | → `Stream<Launch>` | Streams new token launches from NOXA and The Odyssey, gap-filled. Pass `fromBlock` to backfill history. |
 | `streamPortfolio(client, address, options?)` | → `Stream<PortfolioUpdate>` | Streams balance changes for `address` across every Stock Token (and USDG) by watching `Transfer` logs and re-reading the affected balance. |
-| `runLogCursor(options)` | → `() => void` | The gap-fill engine behind every RPC-backed stream above. Maintains a persistent block cursor that only advances after logs for a range are decoded and pushed — a poll error retries the exact same range next tick, so no confirmed event is silently skipped. Returns a `stop()` function. |
+| `runLogCursor(options)` | → `() => void` | The gap-fill engine behind every RPC-backed stream above. Maintains a persistent block cursor that only advances after logs for a range are decoded and pushed: a poll error retries the exact same range next tick, so no confirmed event is silently skipped. Returns a `stop()` function. |
 | `discoverPools(client, token)` | → `Promise<PoolInfo[]>` | Discovers the live Uniswap v3 pools for `token`, probed against WETH and USDG across every fee tier. |
 | `loadPoolInfo(client, pool)` | → `Promise<PoolInfo>` | Reads a pool's `token0`/`token1`/`fee` and both token decimals in one multicall. |
 | `decodeSwapLog(log, info)` | → `SwapEvent \| null` | Decodes a raw viem `Swap` log against a known pool's decimals. |
@@ -179,7 +177,7 @@ interface HoodCache {
 Default TTLs (override any subset via `options.ttls`): `quote: 2000`, `multiplier: 600_000`,
 `portfolio: 5000`, `balance: 5000`, `registry: 3_600_000` (all ms).
 
-`CacheStore` is pluggable — implement `get`/`set`/`delete`/`clear` to back the cache with
+`CacheStore` is pluggable: implement `get`/`set`/`delete`/`clear` to back the cache with
 Redis, Cloudflare KV, or anything else:
 
 ```ts
@@ -199,7 +197,7 @@ Multicall batching on top of `client.public.multicall`, with per-read failure is
 
 | Export | Signature | What it does |
 | --- | --- | --- |
-| `plan(client, reads, options?)` | → `Promise<BatchResult<T>[]>` | Executes many contract reads in the fewest possible Multicall3 round-trips, chunked to `maxBatchSize` (default 500) and run concurrently. Unlike a raw `multicall`, one reverting read never sinks the whole batch — every result carries a `status`. |
+| `plan(client, reads, options?)` | → `Promise<BatchResult<T>[]>` | Executes many contract reads in the fewest possible Multicall3 round-trips, chunked to `maxBatchSize` (default 500) and run concurrently. Unlike a raw `multicall`, one reverting read never sinks the whole batch: every result carries a `status`. |
 | `createBatcher(client, options?)` | → `Batcher` | A DataLoader-style batcher: reads enqueued within the same event-loop tick are coalesced into one Multicall3 call automatically, even across unrelated code paths. |
 
 `Batcher`:
@@ -208,7 +206,7 @@ Multicall batching on top of `client.public.multicall`, with per-read failure is
 interface Batcher {
   call<T = unknown>(read: ContractRead): Promise<T>          // throws only if the call reverts
   callSafe<T = unknown>(read: ContractRead): Promise<BatchResult<T>> // never rejects
-  flush(): Promise<void>       // force-flush now (rarely needed — flush is automatic via a microtask)
+  flush(): Promise<void>       // force-flush now (rarely needed: flush is automatic via a microtask)
   readonly pending: number
 }
 ```
@@ -231,18 +229,17 @@ const [a, b, c] = await Promise.all([
 
 A local, incremental SQLite indexer: syncs `Transfer` and Uniswap v3 `Swap` events for a token
 set, resumes from the last synced block, and answers holder/OHLCV/volume queries from local
-data with **zero RPC at query time**. Requires the optional `better-sqlite3` peer dependency —
-`createIndexer` throws a clear install instruction if it's missing.
+data with **zero RPC at query time**. Requires the optional `better-sqlite3` peer dependency: `createIndexer` throws a clear install instruction if it's missing.
 
 | Export | Signature | What it does |
 | --- | --- | --- |
 | `createIndexer(options)` | → `Promise<Indexer>` | Opens (or creates) a SQLite-backed `Indexer` and discovers each token's Uniswap v3 pools. |
-| `Indexer` | `class` | The indexer instance — see methods below. |
-| `buildCandles(trades, intervalSec)` | → `Candle[]` | Buckets raw trades into OHLCV candles by `floor(ts / intervalSec) * intervalSec`. Sparse — omits empty buckets. |
+| `Indexer` | `class` | The indexer instance: see methods below. |
+| `buildCandles(trades, intervalSec)` | → `Candle[]` | Buckets raw trades into OHLCV candles by `floor(ts / intervalSec) * intervalSec`. Sparse: omits empty buckets. |
 | `fillGaps(candles, intervalSec)` | → `Candle[]` | Forward-fills gaps between candles at the previous close with zero volume, for a continuous chartable series. |
 | `INTERVAL_SECONDS` | `Record<Interval, number>` | `'1m'→60, '5m'→300, '15m'→900, '1h'→3600, '4h'→14400, '1d'→86400`. |
 
-`IndexerOptions { client, path, tokens, chunkSize?, timestampConcurrency?, throttleMs? }` — `path`
+`IndexerOptions { client, path, tokens, chunkSize?, timestampConcurrency?, throttleMs? }`: `path`
 is a SQLite file path, or `':memory:'` for an ephemeral in-process db.
 
 `Indexer` methods:
@@ -281,7 +278,7 @@ dry-run-by-default TWAP executor, and hard spend caps.
 | --- | --- | --- |
 | `Position` | `class`, `new Position(options?: { multiplier?: bigint })` | A multiplier-aware, weighted-average-cost position/PnL tracker. |
 | `SpendCap` | `class`, `new SpendCap(cap: bigint)` | A hard cumulative spend limit in raw units of one token; throws `SpendCapExceededError` once the cap is hit. |
-| `SpendCapExceededError` | `class extends Error` | `{ attempted, remaining }` — thrown by `SpendCap.spend()` and consumed internally by the TWAP executor. |
+| `SpendCapExceededError` | `class extends Error` | `{ attempted, remaining }`: thrown by `SpendCap.spend()` and consumed internally by the TWAP executor. |
 | `createPriceTriggers(client, options?)` | → `PriceTriggers` | Fires callbacks when Stock Token prices cross thresholds, built on `streamPrices`. |
 | `createTwapExecutor(client, config)` | → `TwapExecutor` | Splits a swap into equal time-spaced slices, each independently quoted and slippage-bounded, with a hard `SpendCap`, an `AbortSignal` kill switch, and **dry-run by default** (simulates via `eth_call`; opt into live sending with `dryRun: false`). |
 
@@ -332,7 +329,7 @@ triggers.onCross('AAPL', 250, 'up', (e) => console.log('AAPL broke $250', e.pric
 const twap = createTwapExecutor(hood, {
   tokenIn: usdg, tokenOut: weth, totalAmountIn: parseUsdg('1000'), slices: 5,
 })
-const results = await twap.run() // dryRun defaults on with no wallet — quoted + eth_call-simulated only
+const results = await twap.run() // dryRun defaults on with no wallet: quoted + eth_call-simulated only
 ```
 
 ### React (`hoodkit/react`)
@@ -365,7 +362,7 @@ import { HoodProvider, useQuote, useLaunches } from 'hoodkit/react'
 function QuoteTile({ symbol }: { symbol: string }) {
   const { data, isLoading, error } = useQuote(symbol)
   if (error) return <span>feed error</span>
-  return <span>{data ? `$${data.priceUsd.toFixed(2)}` : isLoading ? 'connecting…' : '—'}</span>
+  return <span>{data ? `$${data.priceUsd.toFixed(2)}` : isLoading ? 'connecting…' : '-'}</span>
 }
 
 function App() {
@@ -379,7 +376,7 @@ function App() {
 ```
 
 A full runnable dashboard using every hook above lives in
-[`examples/react-demo`](./examples/react-demo) — real Chainlink prices and a real launch feed,
+[`examples/react-demo`](./examples/react-demo): real Chainlink prices and a real launch feed,
 no backend. Run it with `cd examples/react-demo && npm install && npm run dev`.
 
 ## Examples
@@ -393,7 +390,7 @@ a full React dashboard:
 | [`batch-plan.ts`](./examples/batch-plan.ts) | `plan()` reading `totalSupply()` for every Stock Token in a handful of multicall round-trips. |
 | [`twap-dry-run.ts`](./examples/twap-dry-run.ts) | `createTwapExecutor` planning and dry-run-simulating a sliced USDG → WETH swap, no wallet key needed. |
 | [`cache-coalescing.ts`](./examples/cache-coalescing.ts) | `createHoodCache` collapsing 50 concurrent `getQuote` calls into 1 upstream read. |
-| [`examples/react-demo`](./examples/react-demo) | A full Vite + React dashboard built on `hoodkit/react` — live prices, live launches. |
+| [`examples/react-demo`](./examples/react-demo) | A full Vite + React dashboard built on `hoodkit/react`: live prices, live launches. |
 
 Build first, then run any script directly with `tsx` (they import the built package):
 
@@ -405,10 +402,10 @@ npx tsx examples/batch-plan.ts
 ## Documentation
 
 - **API reference**: generate the full TypeDoc reference locally with `npm run docs:api`
-  (outputs to `docs/api`, entry points `src/index.ts` and `src/react/index.ts` — see
+  (outputs to `docs/api`, entry points `src/index.ts` and `src/react/index.ts`: see
   [`typedoc.json`](./typedoc.json)).
 - **Homepage**: https://nirholas.github.io/robinhood-chain-kit/
-- **Base SDK**: [`hoodchain`](https://github.com/nirholas/robinhood-chain-sdk) — the typed
+- **Base SDK**: [`hoodchain`](https://github.com/nirholas/robinhood-chain-sdk): the typed
   client, Stock Token registry, swap routing, and firehose that every `hoodkit` module builds on.
 - **Robinhood Chain docs**: https://docs.robinhood.com/chain/
 
@@ -432,26 +429,3 @@ All rights reserved. See [LICENSE](LICENSE).
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=nirholas/robinhood-chain-kit&type=Date)](https://www.star-history.com/#nirholas/robinhood-chain-kit&Date)
-
-<!-- three.ws:growth -->
-## Support the project
-
-If robinhood-chain-kit saves you time, **[star it on GitHub](https://github.com/nirholas/robinhood-chain-kit)**. Stars are how other developers and AI agents find the repositories worth trusting, and they cost you one click.
-
-Know someone who would use it? [Post on X](https://twitter.com/intent/tweet?text=robinhood-chain-kit%3A%20Power-user%20toolkit%20for%20Robinhood%20Chain%3A%20real-time%20streams%2C%20read-through%20caching%2C%20multicall&url=https%3A%2F%2Fgithub.com%2Fnirholas%2Frobinhood-chain-kit) · [Share on Bluesky](https://bsky.app/intent/compose?text=robinhood-chain-kit%3A%20Power-user%20toolkit%20for%20Robinhood%20Chain%3A%20real-time%20streams%2C%20read-through%20caching%2C%20multicall%20https%3A%2F%2Fgithub.com%2Fnirholas%2Frobinhood-chain-kit) · [Share on LinkedIn](https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fnirholas%2Frobinhood-chain-kit) · [Submit to Hacker News](https://news.ycombinator.com/submitlink?u=https%3A%2F%2Fgithub.com%2Fnirholas%2Frobinhood-chain-kit&t=robinhood-chain-kit%3A%20Power-user%20toolkit%20for%20Robinhood%20Chain%3A%20real-time%20streams%2C%20read-through%20caching%2C%20multicall) · [Share on Reddit](https://www.reddit.com/submit?url=https%3A%2F%2Fgithub.com%2Fnirholas%2Frobinhood-chain-kit&title=robinhood-chain-kit%3A%20Power-user%20toolkit%20for%20Robinhood%20Chain%3A%20real-time%20streams%2C%20read-through%20caching%2C%20multicall)
-
-## Built for AI agents too
-
-Coding agents and LLM tooling can read this repo directly: [AGENTS.md](./AGENTS.md), [llms.txt](./llms.txt), [llms-full.txt](./llms-full.txt). Point an agent at `https://github.com/nirholas/robinhood-chain-kit` and it has the context it needs.
-
-## More from the same author
-
-- [All repositories by nirholas](https://github.com/nirholas/nirholas#readme): the full catalog, grouped by topic
-- [three.ws](https://three.ws): the platform for 3D AI agents with Solana wallets, a skill marketplace and x402 payments
-- Questions or ideas: [open an issue](https://github.com/nirholas/robinhood-chain-kit/issues) or [start a discussion](https://github.com/nirholas/robinhood-chain-kit/discussions)
-
-## Contributors
-
-[![Contributors](https://contrib.rocks/image?repo=nirholas/robinhood-chain-kit)](https://github.com/nirholas/robinhood-chain-kit/graphs/contributors)
-
-<!-- /three.ws:growth -->
