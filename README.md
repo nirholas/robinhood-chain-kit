@@ -404,6 +404,7 @@ npx tsx examples/batch-plan.ts
 
 ## Documentation
 
+- **Guides**: [Provider limits: recent single-contract logs](./docs/provider-limits.md).
 - **API reference**: generate the full TypeDoc reference locally with `npm run docs:api`
   (outputs to `docs/api`, entry points `src/index.ts` and `src/react/index.ts` — see
   [`typedoc.json`](./typedoc.json)).
