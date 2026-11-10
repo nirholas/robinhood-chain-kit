@@ -1,0 +1,22 @@
+{
+  "name": "robinhood-chain-kit",
+  "owner": {
+    "name": "nirholas"
+  },
+  "description": "Build bots, dashboards and indexers on Robinhood Chain with hoodkit: streams, caching, multicall batching, a SQLite indexer and strategy primitives.",
+  "plugins": [
+    {
+      "name": "hoodkit",
+      "source": "./plugins/hoodkit",
+      "description": "Build bots, dashboards and indexers on Robinhood Chain with hoodkit: streams, caching, multicall batching, a SQLite indexer and strategy primitives.",
+      "category": "development",
+      "tags": [
+        "robinhood-chain",
+        "sdk",
+        "streams",
+        "indexer",
+        "trading-bot"
+      ]
+    }
+  ]
+}
